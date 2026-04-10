@@ -768,7 +768,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => {
                     setShowCoverUpload(false);
-                    setCoverImage(null);
+                    setCoverImageUrl('');
                     setCoverPreview('');
                     setSelectedPost(null);
                   }}
