@@ -1,0 +1,98 @@
+=====================================
+QUICK FIX: PERMISSION ERROR
+=====================================
+
+ERROR: "Failed to create Editor: Missing or insufficient permissions"
+
+CAUSE: Firestore rules not updated in Firebase yet!
+
+SOLUTION (5 MINUTES):
+---------------------
+
+OPTION 1: Firebase Console (EASIEST) ⭐
+
+Step 1: Go to Firebase Console
+👉 https://console.firebase.google.com/project/school-magazine-app/firestore/rules
+
+Step 2: Copy ALL content from firestore.rules file
+(Open c:\Users\user\Desktop\magazine\firestore.rules and copy everything)
+
+Step 3: Paste in Firebase Console
+- Delete old rules
+- Paste new rules
+- Click "Publish" button
+
+Step 4: Test it!
+- Go to: http://localhost:3002/dashboard/admin/manage
+- Try creating editor again
+- Should work! ✅
+
+=====================================
+
+WHAT TO COPY (Key Part Only):
+-----------------------------
+
+// Users collection - THIS IS THE FIX!
+match /users/{userId} {
+  allow read: if isAuthenticated();
+  
+  // OLD: allow write: if false; ❌
+  // NEW: 
+  allow create: if isAuthenticated() && request.auth.uid == userId;
+  allow write: if isAdmin(); ✅
+}
+
+=====================================
+
+WHY THIS HAPPENS:
+-----------------
+Firestore has security rules that control who can do what.
+
+OLD RULE:
+❌ "No one can write to users collection"
+
+NEW RULE:
+✅ "Admins can create/edit/delete users"
+
+You need to DEPLOY the new rules to Firebase!
+
+=====================================
+
+AFTER DEPLOYING:
+----------------
+1. Wait 30 seconds for rules to propagate
+2. Refresh your admin panel (Ctrl+Shift+R)
+3. Try creating editor again:
+   - Email: editor@school.edu
+   - Password: Editor123!
+   - Name: Test Editor
+   - Unions: Check 1 or more boxes
+4. Click "Create Editor Account"
+5. Success! ✅
+
+=====================================
+
+STILL NOT WORKING?
+------------------
+1. Check rules are deployed:
+   - Go to Firebase Console → Firestore → Rules
+   - Verify line 75 says: allow write: if isAdmin();
+
+2. Clear browser cache:
+   - Press Ctrl+Shift+R (hard refresh)
+
+3. Check you're logged in as ADMIN:
+   - Email: admin@school.edu
+   - Role must be "admin" in Firestore
+
+4. Restart dev server:
+   - Stop (Ctrl+C)
+   - Run: npm run dev
+
+=====================================
+
+GUIDE:
+------
+Read DEPLOY_FIRESTORE_RULES.md for complete instructions!
+
+DEPLOY THE RULES NOW! 🚀

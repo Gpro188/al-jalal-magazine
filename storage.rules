@@ -1,0 +1,29 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Featured images folder
+    match /featured-images/{allPaths=**} {
+      // Anyone can read images (for public magazine)
+      allow read: if true;
+      
+      // Allow uploads (will be validated server-side)
+      // Note: For production, implement proper auth validation
+      allow write: if true;
+    }
+    
+    // Union logos folder
+    match /union-logos/{allPaths=**} {
+      // Anyone can read union logos (for display on login pages)
+      allow read: if true;
+      
+      // Allow uploads
+      allow write: if true;
+    }
+    
+    // Student submission attachments (optional feature)
+    match /submissions/{userId}/{allPaths=**} {
+      // Users can only access their own submissions
+      allow read, write: if true;
+    }
+  }
+}

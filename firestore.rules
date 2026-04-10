@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions to check user roles
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function isContributor() {
+      return getUserRole() == 'contributor';
+    }
+    
+    function isEditor() {
+      return getUserRole() == 'editor' || getUserRole() == 'admin';
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // Posts collection rules
+    match /posts/{postId} {
+      // Anyone can read published posts (public magazine)
+      allow read: if true;
+      
+      // Allow post creation with pending_review status (for both Firebase Auth and Union Login)
+      allow create: if request.resource.data.status == 'pending_review' &&
+                       request.resource.data.studentName is string &&
+                       request.resource.data.title is string &&
+                       request.resource.data.content is string &&
+                       request.resource.data.category is map &&
+                       request.resource.data.authorId is string;
+      
+      // Post owner can update their own pending posts (but not change status) - Firebase Auth
+      allow update: if isOwner(resource.data.authorId) && 
+                       resource.data.status == 'pending_review' &&
+                       request.resource.data.status == 'pending_review';
+      
+      // Allow editing rejected articles (resubmit)
+      allow update: if request.resource.data.status == 'pending_review' &&
+                       resource.data.status == 'rejected' &&
+                       request.resource.data.studentName == resource.data.studentName &&
+                       request.resource.data.title is string &&
+                       request.resource.data.content is string;
+      
+      // Editors can approve (staff_approved) or reject posts (no auth required for union login)
+      allow update: if (request.resource.data.status == 'staff_approved' || 
+                       request.resource.data.status == 'rejected') &&
+                       resource.data.status == 'pending_review' &&
+                       request.resource.data.studentName == resource.data.studentName;
+      
+      // Only admins can publish posts (change staff_approved to published) with optional banner
+      allow update: if isAdmin() && 
+                       request.resource.data.status == 'published' &&
+                       (resource.data.status == 'staff_approved' || resource.data.status == 'published');
+    }
+    
+    // Users collection - read only access
+    match /users/{userId} {
+      // Any authenticated user can read any user profile
+      allow read: if isAuthenticated();
+      
+      // Allow creation of user documents by authenticated users (for self-registration)
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Allow admins to create user documents for other users (like editors)
+      allow create: if isAdmin() && request.resource.data.role in ['contributor', 'editor', 'admin'];
+      
+      // Allow admins to update and delete user documents
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Storage rules for featured images
+    match /featured-images/{imageId} {
+      // Anyone can read published images
+      allow read: if true;
+      
+      // Only admins can upload images
+      allow write: if isAdmin();
+    }
+    
+    // Class Unions collection rules
+    match /classUnions/{unionId} {
+      // Anyone can read class unions (needed for display on login pages)
+      allow read: if true;
+      
+      // Only authenticated admins can create, update, or delete class unions
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}

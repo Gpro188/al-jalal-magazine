@@ -1,0 +1,130 @@
+=====================================
+FIRESTORE DATA - COPY AND PASTE THIS
+=====================================
+
+Go to: https://console.firebase.google.com/project/school-magazine-app/firestore
+
+Click "Start collection"
+Collection ID: users
+
+Then click "Add document" 3 times and fill in this data:
+
+=================================================================
+DOCUMENT 1 - ADMIN
+=================================================================
+Document ID (replace with): NK9LmkRATOh9n3rfhLK6jJHBobJ2
+
+Fields (add one by one):
+
+Field 1:
+  Name: email
+  Type: string
+  Value: admin@school.edu
+
+Field 2:
+  Name: role
+  Type: string
+  Value: admin
+
+Field 3:
+  Name: displayName
+  Type: string
+  Value: School Administrator
+
+Field 4:
+  Name: createdAt
+  Type: timestamp
+  Value: [Click "calendar icon" → Select today's date → Click OK]
+
+Click "Save"
+
+=================================================================
+DOCUMENT 2 - EDITOR
+=================================================================
+Document ID (replace with): JuPDAMW8URT2eViBxmB2yd4lYGl1
+
+Fields (add one by one):
+
+Field 1:
+  Name: email
+  Type: string
+  Value: editor@school.edu
+
+Field 2:
+  Name: role
+  Type: string
+  Value: editor
+
+Field 3:
+  Name: displayName
+  Type: string
+  Value: School Editor
+
+Field 4:
+  Name: createdAt
+  Type: timestamp
+  Value: [Click "calendar icon" → Select today's date → Click OK]
+
+Field 5:
+  Name: classUnion
+  Type: string
+  Value: [Leave blank or type: Alpha Union]
+
+Click "Save"
+
+=================================================================
+DOCUMENT 3 - STUDENT
+=================================================================
+Document ID (replace with): UXwRcCUApMOyydkqKD3qV0BK2Pa2
+
+Fields (add one by one):
+
+Field 1:
+  Name: email
+  Type: string
+  Value: student@school.edu
+
+Field 2:
+  Name: role
+  Type: string
+  Value: contributor
+
+Field 3:
+  Name: displayName
+  Type: string
+  Value: John Student
+
+Field 4:
+  Name: classUnion
+  Type: string
+  Value: Alpha Union
+
+Field 5:
+  Name: createdAt
+  Type: timestamp
+  Value: [Click "calendar icon" → Select today's date → Click OK]
+
+Click "Save"
+
+=================================================================
+DONE! Now you have all 3 users in Firestore.
+=================================================================
+
+TEST THE LOGINS:
+
+1. Admin Login:
+   URL: http://localhost:3002/login
+   Email: admin@school.edu
+   Password: Admin123!
+
+2. Editor Login:
+   URL: http://localhost:3002/login
+   Email: editor@school.edu
+   Password: Editor123!
+
+3. Student Login:
+   URL: http://localhost:3002/login/alpha
+   Email: student@school.edu
+   Password: Student123!
+
+=================================================================

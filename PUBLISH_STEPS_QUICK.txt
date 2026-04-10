@@ -1,0 +1,109 @@
+=====================================
+HOW TO PUBLISH FIRESTORE RULES
+=====================================
+
+PROBLEM: "Publish" button not showing?
+
+SOLUTION: You must SAVE first, then PUBLISH!
+
+=====================================
+EXACT BUTTON SEQUENCE:
+=====================================
+
+Step 1: Select All
+→ Click in editor
+→ Press Ctrl + A
+→ All text highlighted
+
+Step 2: Delete Old Rules
+→ Press Delete key
+→ Editor is now empty
+
+Step 3: Paste New Rules
+→ Open firestore.rules file
+→ Copy all (Ctrl + C)
+→ Paste in Firebase Console (Ctrl + V)
+
+Step 4: CLICK "SAVE" FIRST! 💾
+→ Look for blue "Save" button
+→ Click it
+→ Wait for save to complete
+
+Step 5: THEN Click "Publish" 🚀
+→ Green "Publish" button appears
+→ Click it
+→ Confirm if asked
+
+Step 6: Wait for Success
+→ Message: "Rules published successfully!"
+→ Done! ✅
+
+=====================================
+WHAT YOU SHOULD SEE:
+=====================================
+
+Top of page:
+┌────────────────────────────┐
+│ Firestore Rules            │
+└────────────────────────────┘
+
+Middle (Editor):
+Line 1: rules_version = '2';
+Line 2: service cloud.firestore {
+...
+Line 75: allow write: if isAdmin();
+...
+Line 88: }
+
+Bottom (Buttons):
+[❌ Cancel] [💾 Save] [🚀 Publish]
+     ↑          ↑          ↑
+   Don't      Click      Click
+   click      FIRST     SECOND
+
+=====================================
+TROUBLESHOOTING:
+=====================================
+
+Q: "Save" button is grey/not clickable
+A: Make sure you actually changed the rules
+   - Try adding a comment at top
+   - Or delete all and paste again
+
+Q: No buttons visible at all
+A: Scroll down! Buttons are at bottom of page
+
+Q: "Publish" doesn't appear after save
+A: Rules might already be published
+   - Make a small change (add comment)
+   - Save again
+   - Publish should appear
+
+Q: Can't select all text
+A: Click inside editor first, then Ctrl+A
+
+=====================================
+VERIFICATION:
+=====================================
+
+After publishing, check:
+
+1. Scroll to line 75
+   Does it say: allow write: if isAdmin();
+   ✅ YES = Good!
+   ❌ NO = Not deployed yet
+
+2. Test editor creation:
+   Go to: http://localhost:3002/dashboard/admin/manage
+   Try creating an editor
+   ✅ Should work!
+
+=====================================
+STILL STUCK? TELL ME:
+
+1. What buttons DO you see?
+2. Is the editor showing your rules?
+3. Did you get any error messages?
+4. Screenshot if possible
+
+GUIDE: Read HOW_TO_PUBLISH_RULES.md for detailed help!
