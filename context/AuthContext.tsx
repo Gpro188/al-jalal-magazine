@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onIdTokenChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { User, onIdTokenChanged, Auth } from 'firebase/auth';
+import { doc, getDoc, Firestore } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebaseConfig';
 import { signIn, signOut, signUp } from '@/lib/auth';
 
@@ -36,12 +36,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, async (user) => {
+    if (!auth || !db) {
+      console.warn('Firebase not initialized');
+      setLoading(false);
+      return () => {};
+    }
+
+    const unsubscribe = onIdTokenChanged(auth as Auth, async (user) => {
       setUser(user);
       
       if (user) {
         // Fetch user data from Firestore
-        const userDocRef = doc(db, 'users', user.uid);
+        const userDocRef = doc(db as Firestore, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
         
         if (userDocSnap.exists()) {

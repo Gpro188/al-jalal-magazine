@@ -42,6 +42,13 @@ const nextConfig = {
       },
     ],
   },
+  // Handle pages that depend on client-side data
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
 }
 
 module.exports = nextConfig

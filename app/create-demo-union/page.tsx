@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -32,7 +32,7 @@ export default function CreateDemoUnionPage() {
 
       console.log('Union data:', demoUnion);
 
-      const docRef = await addDoc(collection(db, 'classUnions'), demoUnion);
+      const docRef = await addDoc(collection(db as Firestore, 'classUnions'), demoUnion);
       
       console.log('Demo union created with ID:', docRef.id);
 

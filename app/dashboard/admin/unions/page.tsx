@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -33,7 +33,7 @@ export default function AdminUnionsPage() {
 
   const fetchUnions = async () => {
     try {
-      const unionsRef = collection(db, 'classUnions');
+      const unionsRef = collection(db as Firestore, 'classUnions');
       const q = query(unionsRef, orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       const unionsList: Union[] = [];

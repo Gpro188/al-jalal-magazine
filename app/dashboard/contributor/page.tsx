@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 
 interface Post {
@@ -42,7 +42,7 @@ export default function ContributorDashboard() {
     if (!user) return;
     
     try {
-      const postsRef = collection(db, 'posts');
+      const postsRef = collection(db as Firestore, 'posts');
       
       // Load all posts and filter client-side to avoid index issues
       const allPostsQuery = query(postsRef, orderBy('createdAt', 'desc'));

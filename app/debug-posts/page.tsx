@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -32,7 +32,7 @@ export default function DebugPostsPage() {
       console.log('Fetching all posts...');
       
       // Get ALL posts
-      const postsRef = collection(db, 'posts');
+      const postsRef = collection(db as Firestore, 'posts');
       const allSnapshot = await getDocs(postsRef);
       
       const postsList: Post[] = [];

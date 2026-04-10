@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 
 interface LoginForm {
@@ -43,7 +43,7 @@ export default function UnionLoginPage() {
     const fetchUnionData = async () => {
       try {
         console.log('Looking for union with slug:', unionSlug);
-        const unionsRef = collection(db, 'classUnions');
+        const unionsRef = collection(db as Firestore, 'classUnions');
         const q = query(unionsRef);
         const querySnapshot = await getDocs(q);
         

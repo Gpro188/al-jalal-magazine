@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { collection, query, where, getDocs, updateDoc, doc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, orderBy, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 
 interface Post {
@@ -49,7 +49,7 @@ export default function EditorDashboard() {
   const loadAllPosts = async () => {
     try {
       console.log('Loading all editor posts...');
-      const postsRef = collection(db, 'posts');
+      const postsRef = collection(db as Firestore, 'posts');
       
       // Load all posts and filter client-side to avoid index issues
       const allPostsQuery = query(postsRef, orderBy('createdAt', 'desc'));
@@ -99,7 +99,7 @@ export default function EditorDashboard() {
     setActionLoading(true);
     try {
       console.log('Approving post:', postId);
-      const postRef = doc(db, 'posts', postId);
+      const postRef = doc(db as Firestore, 'posts', postId);
       await updateDoc(postRef, {
         status: 'staff_approved',
         publishedAt: new Date(),
@@ -130,7 +130,7 @@ export default function EditorDashboard() {
     setActionLoading(true);
     try {
       console.log('Rejecting post:', postId, 'Reason:', reason);
-      const postRef = doc(db, 'posts', postId);
+      const postRef = doc(db as Firestore, 'posts', postId);
       await updateDoc(postRef, {
         status: 'rejected',
         rejectedAt: new Date(),

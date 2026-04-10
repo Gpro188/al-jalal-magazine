@@ -4,13 +4,17 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  User 
+  User,
+  Auth
 } from 'firebase/auth';
 
 // Sign up new user
 export const signUp = async (email: string, password: string) => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    if (!auth) {
+      return { success: false, error: 'Auth not initialized' };
+    }
+    const userCredential = await createUserWithEmailAndPassword(auth as Auth, email, password);
     return { success: true, user: userCredential.user };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -20,7 +24,10 @@ export const signUp = async (email: string, password: string) => {
 // Sign in existing user
 export const signIn = async (email: string, password: string) => {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    if (!auth) {
+      return { success: false, error: 'Auth not initialized' };
+    }
+    const userCredential = await signInWithEmailAndPassword(auth as Auth, email, password);
     return { success: true, user: userCredential.user };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -30,7 +37,10 @@ export const signIn = async (email: string, password: string) => {
 // Sign out
 export const signOut = async () => {
   try {
-    await firebaseSignOut(auth);
+    if (!auth) {
+      return { success: false, error: 'Auth not initialized' };
+    }
+    await firebaseSignOut(auth as Auth);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -39,10 +49,14 @@ export const signOut = async () => {
 
 // Listen to auth changes
 export const onAuthChange = (callback: (user: User | null) => void) => {
-  return onAuthStateChanged(auth, callback);
+  if (!auth) {
+    console.warn('Auth not initialized');
+    return () => {};
+  }
+  return onAuthStateChanged(auth as Auth, callback);
 };
 
 // Get current user
 export const getCurrentUser = () => {
-  return auth.currentUser;
+  return auth?.currentUser || null;
 };

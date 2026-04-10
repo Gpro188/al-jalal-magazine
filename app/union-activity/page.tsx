@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -45,7 +45,7 @@ export default function UnionActivityPage() {
   const fetchActivities = async (unionName: string) => {
     try {
       console.log('Fetching activities for union:', unionName);
-      const postsRef = collection(db, 'posts');
+      const postsRef = collection(db as Firestore, 'posts');
       
       // Load all posts and filter client-side to avoid index issues
       const allPostsQuery = query(postsRef, orderBy('createdAt', 'desc'));

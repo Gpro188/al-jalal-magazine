@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -31,7 +31,7 @@ export default function DebugUnionsPage() {
   const fetchUnions = async () => {
     try {
       console.log('Fetching all unions from Firestore...');
-      const unionsRef = collection(db, 'classUnions');
+      const unionsRef = collection(db as Firestore, 'classUnions');
       const querySnapshot = await getDocs(unionsRef);
       
       console.log('Total unions found:', querySnapshot.size);

@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, updateDoc, doc, deleteDoc, serverTimestamp, Firestore, setDoc } from 'firebase/firestore';
+import { FirebaseStorage } from 'firebase/storage';
+import { Auth } from 'firebase/auth';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebaseConfig';
 import Navbar from '@/components/Navbar';
@@ -64,7 +66,7 @@ export default function AdminManagePage() {
 
   const fetchUnions = async () => {
     try {
-      const unionsRef = collection(db, 'classUnions');
+      const unionsRef = collection(db as Firestore, 'classUnions');
       const q = query(unionsRef);
       const querySnapshot = await getDocs(q);
       const unionsList: Union[] = [];
@@ -79,7 +81,7 @@ export default function AdminManagePage() {
 
   const fetchEditors = async () => {
     try {
-      const usersRef = collection(db, 'users');
+      const usersRef = collection(db as Firestore, 'users');
       const q = query(usersRef, where('role', '==', 'editor'));
       const querySnapshot = await getDocs(q);
       const editorsList: User[] = [];
@@ -117,7 +119,11 @@ export default function AdminManagePage() {
       if (logoFile) {
         console.log('Uploading logo file:', logoFile.name);
         const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-        const storage = (await import('@/lib/firebaseConfig')).storage;
+        const storage = (await import('@/lib/firebaseConfig')).storage as FirebaseStorage | undefined;
+        
+        if (!storage) {
+          throw new Error('Storage is not initialized');
+        }
         
         const storageRef = ref(storage, `union-logos/${newUnionName}-${Date.now()}-${logoFile.name}`);
         console.log('Storage reference created:', storageRef.fullPath);
@@ -151,7 +157,7 @@ export default function AdminManagePage() {
 
       console.log('Final union data:', unionData);
 
-      await addDoc(collection(db, 'classUnions'), unionData);
+      await addDoc(collection(db as Firestore, 'classUnions'), unionData);
       
       console.log('Union created successfully!');
       alert('✅ Class Union created successfully!\n\nLogin Credentials:\nUsername: ' + newUnionUsername + '\nPassword: ' + newUnionPassword);
@@ -196,7 +202,7 @@ export default function AdminManagePage() {
     }
 
     try {
-      await deleteDoc(doc(db, 'classUnions', unionId));
+      await deleteDoc(doc(db as Firestore, 'classUnions', unionId));
       alert('✅ Union deleted successfully!');
       fetchUnions();
     } catch (error) {
@@ -218,19 +224,22 @@ export default function AdminManagePage() {
       
       // Try to create Firebase Auth account
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, newEditorEmail, newEditorPassword);
+        if (!auth) {
+          throw new Error('Auth is not initialized');
+        }
+        const userCredential = await createUserWithEmailAndPassword(auth as Auth, newEditorEmail, newEditorPassword);
         uid = userCredential.user.uid;
       } catch (authError: any) {
         // If email already exists, sign in to get the UID
         if (authError.code === 'auth/email-already-in-use') {
           console.log('Email already exists, signing in to get UID...');
           const { signInWithEmailAndPassword } = await import('firebase/auth');
-          const userCredential = await signInWithEmailAndPassword(auth, newEditorEmail, newEditorPassword);
+          const userCredential = await signInWithEmailAndPassword(auth as Auth, newEditorEmail, newEditorPassword);
           uid = userCredential.user.uid;
           
           // Check if user document already exists
           const { doc, getDoc } = await import('firebase/firestore');
-          const userDocRef = doc(db, 'users', uid);
+          const userDocRef = doc(db as Firestore, 'users', uid);
           const userDocSnap = await getDoc(userDocRef);
           
           if (userDocSnap.exists()) {
@@ -261,7 +270,7 @@ export default function AdminManagePage() {
 
       // Use setDoc instead of addDoc to handle both create and update
       const { doc, setDoc } = await import('firebase/firestore');
-      await setDoc(doc(db, 'users', uid), userData);
+      await setDoc(doc(db as Firestore, 'users', uid), userData);
 
       alert('✅ Editor account created successfully!');
       setNewEditorEmail('');
@@ -281,7 +290,7 @@ export default function AdminManagePage() {
     }
 
     try {
-      await deleteDoc(doc(db, 'users', userId));
+      await deleteDoc(doc(db as Firestore, 'users', userId));
       alert('✅ Editor removed successfully!');
       fetchEditors();
     } catch (error) {

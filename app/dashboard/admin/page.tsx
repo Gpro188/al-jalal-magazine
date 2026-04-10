@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { collection, query, where, getDocs, orderBy, Timestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, Timestamp, deleteDoc, doc, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 import { updatePostStatus, uploadFeaturedImage } from '@/lib/firestore';
 
@@ -71,7 +71,7 @@ export default function AdminDashboard() {
   const loadPosts = async () => {
     try {
       console.log('Loading admin posts...');
-      const postsRef = collection(db, 'posts');
+      const postsRef = collection(db as Firestore, 'posts');
       
       // Load all posts and filter client-side to avoid index issues
       const allPostsQuery = query(postsRef, orderBy('createdAt', 'desc'));
@@ -250,7 +250,7 @@ export default function AdminDashboard() {
 
     try {
       console.log('Deleting post:', postId);
-      await deleteDoc(doc(db, 'posts', postId));
+      await deleteDoc(doc(db as Firestore, 'posts', postId));
       alert('✅ Article deleted successfully!');
       
       // Reload posts

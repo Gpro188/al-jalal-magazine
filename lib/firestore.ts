@@ -9,9 +9,11 @@ import {
   where, 
   orderBy, 
   Timestamp,
-  QueryConstraint
+  QueryConstraint,
+  Firestore
 } from 'firebase/firestore';
-import { db } from './firebaseConfig';
+import { FirebaseStorage } from 'firebase/storage';
+import { db, storage } from './firebaseConfig';
 
 export type PostStatus = 'pending_review' | 'staff_approved' | 'published' | 'rejected';
 
@@ -42,7 +44,7 @@ export interface Post {
 // Create a new post (Contributor)
 export const createPost = async (postData: Omit<Post, 'id' | 'createdAt' | 'updatedAt'>): Promise<{ success: boolean; postId?: string; error?: string }> => {
   try {
-    const docRef = await addDoc(collection(db, 'posts'), {
+    const docRef = await addDoc(collection(db as Firestore, 'posts'), {
       ...postData,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
@@ -61,7 +63,7 @@ export const updatePostStatus = async (
   additionalData?: Partial<Post>
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const postRef = doc(db, 'posts', postId);
+    const postRef = doc(db as Firestore, 'posts', postId);
     const updateData: any = {
       status,
       updatedAt: Timestamp.now(),
@@ -80,7 +82,7 @@ export const updatePostStatus = async (
 export const getPostsByStatus = async (status: PostStatus): Promise<Post[]> => {
   try {
     const q = query(
-      collection(db, 'posts'),
+      collection(db as Firestore, 'posts'),
       where('status', '==', status),
       orderBy('createdAt', 'desc')
     );
@@ -103,7 +105,7 @@ export const getPostsByStatus = async (status: PostStatus): Promise<Post[]> => {
 export const getPostsByAuthor = async (authorId: string): Promise<Post[]> => {
   try {
     const q = query(
-      collection(db, 'posts'),
+      collection(db as Firestore, 'posts'),
       where('authorId', '==', authorId),
       orderBy('createdAt', 'desc')
     );
@@ -126,7 +128,7 @@ export const getPostsByAuthor = async (authorId: string): Promise<Post[]> => {
 export const getPublishedPosts = async (limit?: number): Promise<Post[]> => {
   try {
     // Load all posts and filter client-side to avoid index issues
-    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db as Firestore, 'posts'), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     const posts: Post[] = [];
     
@@ -152,7 +154,7 @@ export const getPublishedPosts = async (limit?: number): Promise<Post[]> => {
 // Get single post by ID
 export const getPostById = async (postId: string): Promise<Post | null> => {
   try {
-    const docRef = doc(db, 'posts', postId);
+    const docRef = doc(db as Firestore, 'posts', postId);
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
@@ -176,15 +178,19 @@ export const uploadFeaturedImage = async (file: File, postId: string): Promise<{
     console.log('File type:', file.type);
     
     const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-    const { storage } = await import('./firebaseConfig');
+    const { storage: firestoreStorage } = await import('./firebaseConfig');
     
-    console.log('Storage object:', storage ? 'OK' : 'NULL');
-    console.log('Storage bucket:', storage.app.options.storageBucket);
+    if (!firestoreStorage) {
+      return { success: false, error: 'Storage is not initialized' };
+    }
+    
+    console.log('Storage object:', firestoreStorage ? 'OK' : 'NULL');
+    console.log('Storage bucket:', (firestoreStorage as FirebaseStorage).app.options.storageBucket);
     
     const storagePath = `featured-images/${postId}-${Date.now()}-${file.name}`;
     console.log('Storage path:', storagePath);
     
-    const storageRef = ref(storage, storagePath);
+    const storageRef = ref(firestoreStorage as FirebaseStorage, storagePath);
     console.log('Storage reference created');
     
     // Add timeout to prevent hanging

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '@/context/AuthContext';
 import { createPost, updatePostStatus } from '@/lib/firestore';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -38,7 +38,7 @@ function UnionSelectionCards() {
   const fetchUnions = async () => {
     try {
       console.log('[Submit Page] Fetching unions from Firestore...');
-      const unionsRef = collection(db, 'classUnions');
+      const unionsRef = collection(db as Firestore, 'classUnions');
       const querySnapshot = await getDocs(unionsRef);
       console.log('[Submit Page] Total unions found:', querySnapshot.size);
       
@@ -128,7 +128,7 @@ function UnionSelectionCards() {
   );
 }
 
-export default function SubmitPage() {
+function SubmitPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, userData, loading } = useAuth();
@@ -525,5 +525,21 @@ export default function SubmitPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function SubmitPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-700"></div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <SubmitPageContent />
+    </Suspense>
   );
 }

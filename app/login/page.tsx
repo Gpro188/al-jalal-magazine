@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
 
 interface LoginForm {
@@ -41,7 +41,7 @@ export default function LoginPage() {
   const fetchUnions = async () => {
     try {
       console.log('Fetching unions from Firestore...');
-      const unionsRef = collection(db, 'classUnions');
+      const unionsRef = collection(db as Firestore, 'classUnions');
       const querySnapshot = await getDocs(unionsRef);
       console.log('Total unions found:', querySnapshot.size);
       
