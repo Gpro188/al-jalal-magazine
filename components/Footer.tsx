@@ -28,7 +28,10 @@ export default function Footer() {
           <div>
             <h3 className="font-heading text-xl font-bold mb-4">Contact</h3>
             <p className="text-gray-400 text-sm">
-              For questions or support, contact your school administrator.
+              For questions or support, contact:
+            </p>
+            <p className="text-white text-sm mt-2 font-semibold">
+              📞 9744232786
             </p>
           </div>
         </div>
