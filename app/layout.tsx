@@ -15,8 +15,20 @@ const playfair_display = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: 'School Magazine - Student Voices',
-  description: 'A platform for student voices and creative writing',
+  title: 'അൽ ജലാൽ Online Magazine',
+  description: 'JASIA Students Union of Jamia Jalaliyya Mundakkulam - A platform for student voices and creative excellence',
+  openGraph: {
+    title: 'അൽ ജലാൽ Online Magazine',
+    description: 'JASIA Students Union of Jamia Jalaliyya Mundakkulam - Celebrating Student Voices & Creative Excellence',
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'അൽ ജലാൽ Magazine',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'അൽ ജലാൽ Online Magazine',
+    description: 'JASIA Students Union of Jamia Jalaliyya Mundakkulam - Celebrating Student Voices & Creative Excellence',
+  },
 }
 
 export default function RootLayout({
