@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { collection, query, where, getDocs, orderBy, Timestamp, deleteDoc, doc, Firestore } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
-import { updatePostStatus, uploadFeaturedImage } from '@/lib/firestore';
+import { updatePostStatus, uploadFeaturedImage, getUnionAnalytics, getStudentAnalytics } from '@/lib/firestore';
 
 interface Post {
   id: string;
@@ -34,7 +34,14 @@ export default function AdminDashboard() {
   const [approvedPosts, setApprovedPosts] = useState<Post[]>([]);
   const [publishedPosts, setPublishedPosts] = useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'approved' | 'published'>('approved');
+  const [activeTab, setActiveTab] = useState<'approved' | 'published' | 'analytics'>('approved');
+  
+  // Analytics state
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [unionAnalytics, setUnionAnalytics] = useState<{ union: string; count: number }[]>([]);
+  const [studentAnalytics, setStudentAnalytics] = useState<{ student: string; count: number; union: string }[]>([]);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   
   // Modal states
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -100,6 +107,30 @@ export default function AdminDashboard() {
       setPostsLoading(false);
     }
   };
+
+  // Load analytics data
+  const loadAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const [unionData, studentData] = await Promise.all([
+        getUnionAnalytics(selectedMonth, selectedYear),
+        getStudentAnalytics(selectedMonth, selectedYear)
+      ]);
+      setUnionAnalytics(unionData);
+      setStudentAnalytics(studentData);
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  // Load analytics when tab changes or month/year changes
+  useEffect(() => {
+    if (activeTab === 'analytics') {
+      loadAnalytics();
+    }
+  }, [activeTab, selectedMonth, selectedYear]);
 
   // Read article handler
   const handleReadArticle = (post: Post) => {
@@ -352,128 +383,335 @@ export default function AdminDashboard() {
           >
             🎉 Published ({publishedPosts.length})
           </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-6 py-3 font-semibold transition-colors ${
+              activeTab === 'analytics'
+                ? 'text-purple-700 border-b-2 border-purple-700'
+                : 'text-gray-700 hover:text-gray-900'
+            }`}
+          >
+            📊 Analytics
+          </button>
         </div>
 
-        {/* Posts List */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="font-heading text-2xl font-bold text-gray-800 mb-6">
-            {activeTab === 'approved' && 'Approved Articles (Awaiting Publication)'}
-            {activeTab === 'published' && 'Published Articles'}
-          </h2>
+        {/* Tab Content */}
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          {/* Analytics Tab */}
+          {activeTab === 'analytics' && (
+            <div>
+              <h2 className="font-heading text-3xl font-bold text-gray-800 mb-6">
+                📊 Monthly Analytics & Student Performance
+              </h2>
 
-          {postsLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading posts...</p>
+              {/* Month/Year Selector */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-8">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <label className="font-semibold text-gray-700">Select Month:</label>
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                      <option key={month} value={month}>
+                        {new Date(2000, month - 1).toLocaleString('default', { month: 'long' })}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  >
+                    {[2024, 2025, 2026, 2027].map((year) => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={loadAnalytics}
+                    disabled={analyticsLoading}
+                    className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    {analyticsLoading ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+              </div>
+
+              {analyticsLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+                  <p className="mt-4 text-gray-600">Loading analytics...</p>
+                </div>
+              ) : (
+                <div className="grid lg:grid-cols-2 gap-8">
+                  {/* Union Analytics */}
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
+                    <h3 className="text-2xl font-bold text-blue-900 mb-4">
+                      🏆 Most Published Unions
+                    </h3>
+                    <p className="text-sm text-blue-700 mb-6">
+                      {new Date(2000, selectedMonth - 1).toLocaleString('default', { month: 'long' })} {selectedYear}
+                    </p>
+                    
+                    {unionAnalytics.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No publications this month
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {unionAnalytics.map((item, index) => {
+                          const maxCount = unionAnalytics[0]?.count || 1;
+                          const percentage = (item.count / maxCount) * 100;
+                          const colors = [
+                            'from-yellow-400 to-yellow-500',
+                            'from-gray-400 to-gray-500',
+                            'from-orange-400 to-orange-500',
+                            'from-blue-400 to-blue-500',
+                            'from-green-400 to-green-500'
+                          ];
+                          const barColor = colors[index] || 'from-gray-300 to-gray-400';
+                          
+                          return (
+                            <div key={item.union} className="bg-white rounded-lg p-4 shadow-md">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                  {index < 3 && (
+                                    <span className="text-2xl">
+                                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                                    </span>
+                                  )}
+                                  <span className="font-bold text-gray-900 text-lg">{item.union}</span>
+                                </div>
+                                <span className="text-2xl font-bold text-blue-700">{item.count}</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                                <div
+                                  className={`h-full bg-gradient-to-r ${barColor} transition-all duration-500`}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                              <p className="text-xs text-gray-600 mt-2">
+                                {item.count} {item.count === 1 ? 'article' : 'articles'} published
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Student Analytics */}
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
+                    <h3 className="text-2xl font-bold text-green-900 mb-4">
+                      ⭐ Top Student Contributors
+                    </h3>
+                    <p className="text-sm text-green-700 mb-6">
+                      {new Date(2000, selectedMonth - 1).toLocaleString('default', { month: 'long' })} {selectedYear}
+                    </p>
+                    
+                    {studentAnalytics.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No publications this month
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {studentAnalytics.slice(0, 10).map((item, index) => {
+                          const maxCount = studentAnalytics[0]?.count || 1;
+                          const percentage = (item.count / maxCount) * 100;
+                          const colors = [
+                            'from-yellow-400 to-yellow-500',
+                            'from-gray-400 to-gray-500',
+                            'from-orange-400 to-orange-500',
+                            'from-green-400 to-green-500',
+                            'from-blue-400 to-blue-500'
+                          ];
+                          const barColor = colors[index] || 'from-gray-300 to-gray-400';
+                          
+                          return (
+                            <div key={item.student} className="bg-white rounded-lg p-4 shadow-md">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                  {index < 3 && (
+                                    <span className="text-2xl">
+                                      {index === 0 ? '🏆' : index === 1 ? '🥈' : '🥉'}
+                                    </span>
+                                  )}
+                                  <div>
+                                    <span className="font-bold text-gray-900 text-lg">{item.student}</span>
+                                    <p className="text-xs text-gray-600">{item.union}</p>
+                                  </div>
+                                </div>
+                                <span className="text-2xl font-bold text-green-700">{item.count}</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                                <div
+                                  className={`h-full bg-gradient-to-r ${barColor} transition-all duration-500`}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                              <p className="text-xs text-gray-600 mt-2">
+                                {item.count} {item.count === 1 ? 'article' : 'articles'} - Great for gift rewards! 🎁
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Gift Recommendation Section */}
+              {studentAnalytics.length > 0 && (
+                <div className="mt-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg p-6 shadow-lg">
+                  <h3 className="text-2xl font-bold mb-4">🎁 Gift Recommendation</h3>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {studentAnalytics.slice(0, 3).map((student, index) => (
+                      <div key={student.student} className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                        <div className="text-3xl mb-2">
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                        </div>
+                        <p className="font-bold text-lg">{student.student}</p>
+                        <p className="text-sm opacity-90">{student.union}</p>
+                        <p className="text-2xl font-bold mt-2">{student.count} articles</p>
+                        <p className="text-xs mt-2 opacity-75">
+                          {index === 0 ? 'First Place' : index === 1 ? 'Second Place' : 'Third Place'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-sm opacity-90">
+                    💡 Tip: Consider giving gifts to top contributors to encourage more participation!
+                  </p>
+                </div>
+              )}
             </div>
-          ) : activeTab === 'approved' && approvedPosts.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No approved articles awaiting publication.</p>
-            </div>
-          ) : activeTab === 'published' && publishedPosts.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No published articles yet.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {(activeTab === 'approved' ? approvedPosts : publishedPosts).map((post) => (
-                <div 
-                  key={post.id}
-                  className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow bg-gray-50"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">{post.title}</h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span className="flex items-center gap-1">
-                          👤 {post.studentName}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          🏛️ {post.category?.union}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          📅 Year {post.category?.year}
+          )}
+
+          {/* Posts Tabs (Approved/Published) */}
+          {activeTab !== 'analytics' && (
+            <div>
+              <h2 className="font-heading text-2xl font-bold text-gray-800 mb-6">
+                {activeTab === 'approved' && 'Approved Articles (Awaiting Publication)'}
+                {activeTab === 'published' && 'Published Articles'}
+              </h2>
+
+              {postsLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700 mx-auto"></div>
+                  <p className="mt-4 text-gray-600">Loading posts...</p>
+                </div>
+              ) : activeTab === 'approved' && approvedPosts.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg">No approved articles awaiting publication.</p>
+                </div>
+              ) : activeTab === 'published' && publishedPosts.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg">No published articles yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {(activeTab === 'approved' ? approvedPosts : publishedPosts).map((post) => (
+                    <div 
+                      key={post.id}
+                      className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow bg-gray-50"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-2xl font-bold text-gray-900 mb-2">{post.title}</h3>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span className="flex items-center gap-1">
+                              👤 {post.studentName}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              🏛️ {post.category?.union}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              📅 Year {post.category?.year}
+                            </span>
+                          </div>
+                        </div>
+                        <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${
+                          activeTab === 'approved' 
+                            ? 'bg-blue-100 text-blue-800 border-blue-300'
+                            : 'bg-green-100 text-green-800 border-green-300'
+                        }`}>
+                          {activeTab === 'approved' && '✅ Approved'}
+                          {activeTab === 'published' && '🎉 Published'}
                         </span>
                       </div>
-                    </div>
-                    <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${
-                      activeTab === 'approved' 
-                        ? 'bg-blue-100 text-blue-800 border-blue-300'
-                        : 'bg-green-100 text-green-800 border-green-300'
-                    }`}>
-                      {activeTab === 'approved' && '✅ Approved'}
-                      {activeTab === 'published' && '🎉 Published'}
-                    </span>
-                  </div>
-                  
-                  <div className="text-sm text-gray-500 mb-4">
-                    🕒 {post.publishedAt ? new Date(post.publishedAt.toDate()).toLocaleString() : 'N/A'}
-                  </div>
+                      
+                      <div className="text-sm text-gray-500 mb-4">
+                        🕒 {post.publishedAt ? new Date(post.publishedAt.toDate()).toLocaleString() : 'N/A'}
+                      </div>
 
-                  {/* Action buttons for approved posts */}
-                  {activeTab === 'approved' && (
-                    <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
-                      <button
-                        onClick={() => handleReadArticle(post)}
-                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-                      >
-                        📖 Read Article
-                      </button>
-                      <button
-                        onClick={() => handleQuickPublish(post.id)}
-                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold"
-                      >
-                        ✅ Publish (No Banner)
-                      </button>
-                      <button
-                        onClick={() => openPublishModal(post)}
-                        className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
-                      >
-                        🎯 Publish with Banner
-                      </button>
-                      <button
-                        onClick={() => handleDeletePost(post.id, post.title, post.status)}
-                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold"
-                        title="Delete Article"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  )}
+                      {/* Action buttons for approved posts */}
+                      {activeTab === 'approved' && (
+                        <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
+                          <button
+                            onClick={() => handleReadArticle(post)}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                          >
+                            📖 Read Article
+                          </button>
+                          <button
+                            onClick={() => handleQuickPublish(post.id)}
+                            className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                          >
+                            ✅ Publish (No Banner)
+                          </button>
+                          <button
+                            onClick={() => openPublishModal(post)}
+                            className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                          >
+                            🎯 Publish with Banner
+                          </button>
+                          <button
+                            onClick={() => handleDeletePost(post.id, post.title, post.status)}
+                            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold"
+                            title="Delete Article"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      )}
 
-                  {/* Action buttons for published posts */}
-                  {activeTab === 'published' && (
-                    <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
-                      <Link
-                        href={`/article/${post.id}`}
-                        target="_blank"
-                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-center"
-                      >
-                        🔗 View Article
-                      </Link>
-                      <button
-                        onClick={() => handleDeletePost(post.id, post.title, post.status)}
-                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold"
-                        title="Delete Article"
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  )}
+                      {/* Action buttons for published posts */}
+                      {activeTab === 'published' && (
+                        <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
+                          <Link
+                            href={`/article/${post.id}`}
+                            target="_blank"
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-center"
+                          >
+                            🔗 View Article
+                          </Link>
+                          <button
+                            onClick={() => handleDeletePost(post.id, post.title, post.status)}
+                            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold"
+                            title="Delete Article"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      )}
 
-                  {/* Show banner info if published with banner */}
-                  {activeTab === 'published' && post.isBanner && post.bannerEnd && (
-                    <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                      <p className="text-sm text-purple-800 font-semibold">
-                        🎯 Banner Active
-                      </p>
-                      <p className="text-xs text-purple-700 mt-1">
-                        Ends: {new Date(post.bannerEnd.toDate()).toLocaleString()}
-                      </p>
+                      {/* Show banner info if published with banner */}
+                      {activeTab === 'published' && post.isBanner && post.bannerEnd && (
+                        <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                          <p className="text-sm text-purple-800 font-semibold">
+                            🎯 Banner Active
+                          </p>
+                          <p className="text-xs text-purple-700 mt-1">
+                            Ends: {new Date(post.bannerEnd.toDate()).toLocaleString()}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

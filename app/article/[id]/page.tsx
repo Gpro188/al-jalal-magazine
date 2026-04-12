@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { getPostById } from '@/lib/firestore';
+import { getPostById, likePost, unlikePost, hasUserLiked } from '@/lib/firestore';
 import type { Post } from '@/lib/firestore';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -13,8 +13,20 @@ export default function ArticlePage() {
   const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [userId, setUserId] = useState<string>('');
 
   useEffect(() => {
+    // Get or create user ID for tracking likes
+    let storedUserId = localStorage.getItem('magazineUserId');
+    if (!storedUserId) {
+      storedUserId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('magazineUserId', storedUserId);
+    }
+    setUserId(storedUserId);
+    
     if (params.id) {
       loadPost();
     }
@@ -25,6 +37,8 @@ export default function ArticlePage() {
       const postData = await getPostById(params.id as string);
       if (postData) {
         setPost(postData);
+        setLikeCount(postData.likes || 0);
+        setLiked(hasUserLiked(postData, userId));
       } else {
         router.push('/');
       }
@@ -33,6 +47,33 @@ export default function ArticlePage() {
       router.push('/');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLike = async () => {
+    if (!post || likeLoading) return;
+    
+    setLikeLoading(true);
+    try {
+      if (liked) {
+        // Unlike
+        const result = await unlikePost(post.id!, userId);
+        if (result.success) {
+          setLiked(false);
+          setLikeCount(prev => Math.max(prev - 1, 0));
+        }
+      } else {
+        // Like
+        const result = await likePost(post.id!, userId);
+        if (result.success) {
+          setLiked(true);
+          setLikeCount(prev => prev + 1);
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    } finally {
+      setLikeLoading(false);
     }
   };
 
@@ -144,6 +185,40 @@ export default function ArticlePage() {
 
           {/* Footer */}
           <div className="mt-12 pt-8 border-t border-gray-200">
+            {/* Like Button */}
+            <div className="flex items-center gap-4 mb-6">
+              <button
+                onClick={handleLike}
+                disabled={likeLoading}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${
+                  liked
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'
+                } ${likeLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                <svg
+                  className={`w-6 h-6 ${liked ? 'fill-current' : 'fill-none stroke-current'}`}
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
+                </svg>
+                <span className="text-lg">{likeCount}</span>
+                <span>{liked ? 'Liked' : 'Like'}</span>
+              </button>
+              {likeCount > 0 && (
+                <span className="text-gray-500 text-sm">
+                  {likeCount} {likeCount === 1 ? 'student' : 'students'} liked this article
+                </span>
+              )}
+            </div>
+
             <button
               onClick={() => router.push('/')}
               className="bg-red-700 text-white px-6 py-3 rounded-lg hover:bg-red-800 transition-colors font-semibold"

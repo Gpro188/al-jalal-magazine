@@ -39,6 +39,8 @@ export interface Post {
   subtitleSize?: 'small' | 'medium' | 'large';
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  likes?: number; // Number of likes
+  likedBy?: string[]; // Array of user IDs who liked
 }
 
 // Create a new post (Contributor)
@@ -165,6 +167,130 @@ export const getPostById = async (postId: string): Promise<Post | null> => {
   } catch (error) {
     console.error('Error getting post:', error);
     return null;
+  }
+};
+
+// Like a post
+export const likePost = async (postId: string, userId: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const postRef = doc(db as Firestore, 'posts', postId);
+    const postSnap = await getDoc(postRef);
+    
+    if (!postSnap.exists()) {
+      return { success: false, error: 'Post not found' };
+    }
+    
+    const postData = postSnap.data();
+    const likedBy = postData.likedBy || [];
+    
+    // Check if user already liked
+    if (likedBy.includes(userId)) {
+      return { success: false, error: 'Already liked' };
+    }
+    
+    // Add user to likedBy array and increment likes
+    await updateDoc(postRef, {
+      likes: (postData.likes || 0) + 1,
+      likedBy: [...likedBy, userId]
+    });
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error liking post:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Unlike a post
+export const unlikePost = async (postId: string, userId: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const postRef = doc(db as Firestore, 'posts', postId);
+    const postSnap = await getDoc(postRef);
+    
+    if (!postSnap.exists()) {
+      return { success: false, error: 'Post not found' };
+    }
+    
+    const postData = postSnap.data();
+    const likedBy = postData.likedBy || [];
+    
+    // Remove user from likedBy array and decrement likes
+    await updateDoc(postRef, {
+      likes: Math.max((postData.likes || 0) - 1, 0),
+      likedBy: likedBy.filter((id: string) => id !== userId)
+    });
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error unliking post:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Check if user liked a post
+export const hasUserLiked = (post: Post, userId: string): boolean => {
+  if (!post.likedBy || !userId) return false;
+  return post.likedBy.includes(userId);
+};
+
+// Get analytics data - Most published unions by month
+export const getUnionAnalytics = async (month: number, year: number): Promise<{ union: string; count: number }[]> => {
+  try {
+    const postsRef = collection(db as Firestore, 'posts');
+    const allPostsQuery = query(postsRef, orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(allPostsQuery);
+    
+    const unionCounts: { [key: string]: number } = {};
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.status === 'published' && data.publishedAt) {
+        const publishDate = data.publishedAt.toDate();
+        if (publishDate.getMonth() === month - 1 && publishDate.getFullYear() === year) {
+          const union = data.category?.union || 'Unknown';
+          unionCounts[union] = (unionCounts[union] || 0) + 1;
+        }
+      }
+    });
+    
+    return Object.entries(unionCounts)
+      .map(([union, count]) => ({ union, count }))
+      .sort((a, b) => b.count - a.count);
+  } catch (error) {
+    console.error('Error getting union analytics:', error);
+    return [];
+  }
+};
+
+// Get analytics data - Most published students by month
+export const getStudentAnalytics = async (month: number, year: number): Promise<{ student: string; count: number; union: string }[]> => {
+  try {
+    const postsRef = collection(db as Firestore, 'posts');
+    const allPostsQuery = query(postsRef, orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(allPostsQuery);
+    
+    const studentCounts: { [key: string]: { count: number; union: string } } = {};
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.status === 'published' && data.publishedAt) {
+        const publishDate = data.publishedAt.toDate();
+        if (publishDate.getMonth() === month - 1 && publishDate.getFullYear() === year) {
+          const student = data.studentName || 'Unknown';
+          if (!studentCounts[student]) {
+            studentCounts[student] = { count: 0, union: data.category?.union || 'Unknown' };
+          }
+          studentCounts[student].count += 1;
+        }
+      }
+    });
+    
+    return Object.entries(studentCounts)
+      .map(([student, data]) => ({ student, count: data.count, union: data.union }))
+      .sort((a, b) => b.count - a.count);
+  } catch (error) {
+    console.error('Error getting student analytics:', error);
+    return [];
   }
 };
 

@@ -50,29 +50,6 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      {/* Hero Section */}
-      <header className="bg-gradient-to-r from-red-700 via-red-600 to-red-800 text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h1 className="font-heading text-5xl md:text-7xl font-bold mb-4">
-              AL-JALAL
-            </h1>
-            <p className="text-xl md:text-2xl font-light mb-2">
-              JASIA STUDENTS UNION OF JAMIA JALALIYYA MUNDAKKULAM
-            </p>
-            <p className="text-lg md:text-xl font-light mb-8 opacity-90">
-              Celebrating Student Voices & Creative Excellence
-            </p>
-            <Link 
-              href="/submit"
-              className="inline-block bg-white text-red-700 font-semibold px-8 py-3 rounded-full hover:bg-gray-100 transition-colors shadow-lg"
-            >
-              Submit Your Article
-            </Link>
-          </div>
-        </div>
-      </header>
-
       {/* Banner Slider */}
       {!loading && bannerPosts.length > 0 && (
         <section className="relative h-[500px] bg-black">
@@ -184,7 +161,17 @@ function ArticleCard({ post }: { post: Post }) {
           
           <div className="flex items-center justify-between text-sm text-gray-500">
             <span className="font-medium">{post.studentName}</span>
-            <time>{formatDate(post.createdAt)}</time>
+            <div className="flex items-center gap-3">
+              {post.likes && post.likes > 0 && (
+                <span className="flex items-center gap-1 text-red-600">
+                  <svg className="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  {post.likes}
+                </span>
+              )}
+              <time>{formatDate(post.createdAt)}</time>
+            </div>
           </div>
         </div>
       </article>
