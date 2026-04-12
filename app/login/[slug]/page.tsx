@@ -214,7 +214,7 @@ export default function UnionLoginPage() {
         <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 border-t-4" style={{ borderColor: unionData.color.replace('-700', '-500') }}>
           <div className="text-center mb-8">
             <h1 className="font-heading text-3xl font-bold mb-2 text-gray-900">
-              {unionData.name} - AL-JALAL
+              {unionData.name} - അൽ ജലാൽ
             </h1>
             <p className="text-gray-700">
               JASIA Students Union of Jamia Jalaliyya Mundakkulam

@@ -5,7 +5,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-3 gap-8">
           {/* About */}
           <div>
-            <h3 className="font-heading text-xl font-bold mb-4">AL-JALAL</h3>
+            <h3 className="font-heading text-xl font-bold mb-4">അൽ ജലാൽ</h3>
             <p className="text-gray-400 text-sm">
               JASIA STUDENTS UNION OF JAMIA JALALIYYA MUNDAKKULAM
             </p>
@@ -34,7 +34,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
-          <p>&copy; {new Date().getFullYear()} AL-JALAL - JASIA Students Union of Jamia Jalaliyya Mundakkulam. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} അൽ ജലാൽ - JASIA Students Union of Jamia Jalaliyya Mundakkulam. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -141,7 +141,7 @@ export default function LoginPage() {
                     {selectedUnion.name} Login
                   </h1>
                   <p className="text-gray-700 text-sm">
-                    AL-JALAL Magazine - JASIA Students Union
+                    അൽ ജലാൽ Magazine - JASIA Students Union
                   </p>
                 </>
               ) : (
@@ -150,7 +150,7 @@ export default function LoginPage() {
                     Editor/Staff Login
                   </h1>
                   <p className="text-gray-700 text-sm">
-                    AL-JALAL Magazine Portal
+                    അൽ ജലാൽ Magazine Portal
                   </p>
                 </>
               )}
@@ -243,7 +243,7 @@ export default function LoginPage() {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="font-heading text-4xl font-bold mb-4 text-gray-900">
-              AL-JALAL Magazine
+              അൽ ജലാൽ Magazine
             </h1>
             <p className="text-xl text-gray-700 mb-2">
               JASIA Students Union of Jamia Jalaliyya Mundakkulam

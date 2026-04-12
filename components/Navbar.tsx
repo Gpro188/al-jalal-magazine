@@ -22,7 +22,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <Link href="/" className="font-heading text-2xl font-bold text-red-700">
-            AL-JALAL
+            അൽ ജലാൽ
           </Link>
 
           {/* Navigation Links */}

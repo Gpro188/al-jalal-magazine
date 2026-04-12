@@ -266,7 +266,7 @@ function SubmitPageContent() {
                 Submit Your Article
               </h1>
               <p className="text-xl text-gray-700 mb-2">
-                AL-JALAL Magazine - JASIA Students Union
+                അൽ ജലാൽ Magazine - JASIA Students Union
               </p>
               <p className="text-gray-600">
                 Please login through your Class Union to submit articles
