@@ -13,6 +13,9 @@ export default function Home() {
   const [publishedPosts, setPublishedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [bannerPosts, setBannerPosts] = useState<Post[]>([]);
+  const [visiblePosts, setVisiblePosts] = useState<Post[]>([]);
+  const [showAll, setShowAll] = useState(false);
+  const INITIAL_POSTS = 6; // Number of posts to show initially
 
   useEffect(() => {
     loadPosts();
@@ -39,11 +42,19 @@ export default function Home() {
       });
       
       setBannerPosts(activeBanners);
+      
+      // Show initial posts
+      setVisiblePosts(posts.slice(0, INITIAL_POSTS));
     } catch (error) {
       console.error('Error loading posts:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMorePosts = () => {
+    setVisiblePosts(publishedPosts);
+    setShowAll(true);
   };
 
   return (
@@ -57,10 +68,10 @@ export default function Home() {
         </section>
       )}
 
-      {/* Latest Articles Grid */}
+      {/* Recent Posts Grid */}
       <main className="container mx-auto px-4 py-12">
         <h2 className="font-heading text-4xl font-bold mb-8 text-center text-gray-800">
-          Latest Articles
+          Recent Posts
         </h2>
 
         {loading ? (
@@ -75,11 +86,25 @@ export default function Home() {
             </Link>
           </div>
         ) : (
-          <div className="magazine-grid">
-            {publishedPosts.map((post) => (
-              <ArticleCard key={post.id} post={post} />
-            ))}
-          </div>
+          <>
+            <div className="magazine-grid">
+              {visiblePosts.map((post) => (
+                <ArticleCard key={post.id} post={post} />
+              ))}
+            </div>
+            
+            {/* Load More Button */}
+            {!showAll && publishedPosts.length > INITIAL_POSTS && (
+              <div className="text-center mt-12">
+                <button
+                  onClick={loadMorePosts}
+                  className="bg-red-700 text-white px-8 py-3 rounded-full hover:bg-red-800 transition-colors font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  Load More Posts ({publishedPosts.length - INITIAL_POSTS} more)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
 
