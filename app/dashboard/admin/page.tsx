@@ -26,6 +26,8 @@ interface Post {
   isBanner?: boolean;
   bannerStart?: any;
   bannerEnd?: any;
+  titleSize?: 'small' | 'medium' | 'large';
+  subtitleSize?: 'small' | 'medium' | 'large';
 }
 
 export default function AdminDashboard() {
@@ -60,6 +62,11 @@ export default function AdminDashboard() {
   const [coverImageUrl, setCoverImageUrl] = useState<string>('');
   const [coverPreview, setCoverPreview] = useState<string>('');
   const [showCoverUpload, setShowCoverUpload] = useState(false);
+  
+  // Edit states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
   
   // Text size options
   const [titleSize, setTitleSize] = useState<'small' | 'medium' | 'large'>('large');
@@ -268,6 +275,101 @@ export default function AdminDashboard() {
     } finally {
       setPublishing(false);
       console.log('Publishing state reset');
+    }
+  };
+
+  // Open edit modal for published posts
+  const openEditModal = (post: Post) => {
+    setSelectedPost(post);
+    setEditTitle(post.title || '');
+    setEditContent(post.content || '');
+    setSetAsBanner(post.isBanner || false);
+    setBannerImageUrl(post.featuredImage || '');
+    setBannerPreview(post.featuredImage || '');
+    
+    // Set banner times
+    if (post.bannerStart) {
+      try {
+        const startDate = post.bannerStart.toDate();
+        setBannerStart(startDate.toISOString().slice(0, 16));
+      } catch (e) {
+        setBannerStart(new Date().toISOString().slice(0, 16));
+      }
+    } else {
+      setBannerStart(new Date().toISOString().slice(0, 16));
+    }
+    
+    if (post.bannerEnd) {
+      try {
+        const endDate = post.bannerEnd.toDate();
+        setBannerEnd(endDate.toISOString().slice(0, 16));
+      } catch (e) {
+        const now = new Date();
+        const future = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        setBannerEnd(future.toISOString().slice(0, 16));
+      }
+    } else {
+      const now = new Date();
+      const future = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      setBannerEnd(future.toISOString().slice(0, 16));
+    }
+    
+    setTitleSize(post.titleSize || 'large');
+    setSubtitleSize(post.subtitleSize || 'medium');
+    setShowEditModal(true);
+  };
+
+  // Handle post update
+  const handleUpdatePost = async () => {
+    if (!selectedPost || !editTitle.trim() || !editContent.trim()) {
+      alert('Please fill in both title and content');
+      return;
+    }
+
+    setPublishing(true);
+    try {
+      console.log('Updating post:', selectedPost.id);
+      const updateData: any = {
+        title: editTitle.trim(),
+        content: editContent.trim(),
+        titleSize,
+        subtitleSize,
+        updatedAt: Timestamp.now(),
+      };
+
+      if (setAsBanner && bannerImageUrl.trim()) {
+        updateData.featuredImage = bannerImageUrl.trim();
+        updateData.isBanner = true;
+        updateData.bannerStart = Timestamp.fromDate(new Date(bannerStart));
+        updateData.bannerEnd = Timestamp.fromDate(new Date(bannerEnd));
+      } else {
+        updateData.isBanner = false;
+        // Keep existing image if not setting as banner, or update if provided
+        if (bannerImageUrl.trim()) {
+          updateData.featuredImage = bannerImageUrl.trim();
+        }
+      }
+
+      await updatePostStatus(selectedPost.id, 'published', updateData);
+      console.log('Post updated successfully');
+      alert('✅ Article updated successfully!');
+      
+      // Reset and close
+      setShowEditModal(false);
+      setSelectedPost(null);
+      setEditTitle('');
+      setEditContent('');
+      setBannerImageUrl('');
+      setBannerPreview('');
+      setSetAsBanner(false);
+      
+      // Reload posts
+      await loadPosts();
+    } catch (error: any) {
+      console.error('Error updating post:', error);
+      alert('❌ Failed to update article: ' + error.message);
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -688,6 +790,12 @@ export default function AdminDashboard() {
                             🔗 View Article
                           </Link>
                           <button
+                            onClick={() => openEditModal(post)}
+                            className="flex-1 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors font-semibold"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
                             onClick={() => handleDeletePost(post.id, post.title, post.status)}
                             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold"
                             title="Delete Article"
@@ -1083,6 +1191,198 @@ export default function AdminDashboard() {
                   }`}
                 >
                   {publishing ? 'Publishing...' : (coverImageUrl.trim() ? 'Publish with Cover' : 'Publish Without Cover')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Article Modal */}
+      {showEditModal && selectedPost && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-yellow-600 to-orange-600 text-white p-6 rounded-t-lg">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="font-heading text-2xl font-bold mb-1">✏️ Edit Article</h2>
+                  <p className="text-sm text-yellow-100">Managing: {selectedPost.studentName}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setSelectedPost(null);
+                  }}
+                  className="text-white hover:text-gray-200 transition-colors ml-4"
+                >
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Title Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Article Title *
+                </label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  placeholder="Enter title"
+                />
+              </div>
+
+              {/* Content Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Article Content *
+                </label>
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  rows={8}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  placeholder="Enter content"
+                />
+              </div>
+
+              {/* Banner Settings Section */}
+              <div className="border-t border-gray-100 pt-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  🎯 Banner & Visual Settings
+                </h3>
+                
+                {/* Banner Toggle */}
+                <div className="flex items-center gap-3 mb-6">
+                  <input
+                    type="checkbox"
+                    id="editSetAsBanner"
+                    checked={setAsBanner}
+                    onChange={(e) => setSetAsBanner(e.target.checked)}
+                    className="h-5 w-5 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="editSetAsBanner" className="font-semibold text-gray-800">
+                    Set as Featured Banner Article
+                  </label>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Image URL (Always show, used for featured image even if not banner) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Featured/Banner Image URL
+                    </label>
+                    <input
+                      type="url"
+                      value={bannerImageUrl}
+                      onChange={(e) => handleBannerUrlChange(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                    />
+                    {bannerPreview && (
+                      <div className="mt-3">
+                        <img 
+                          src={bannerPreview} 
+                          alt="Preview" 
+                          className="h-32 w-full object-cover rounded-lg border border-gray-200"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {setAsBanner && (
+                    <>
+                      {/* Banner Times */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Start Time
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={bannerStart}
+                            onChange={(e) => setBannerStart(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            End Time
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={bannerEnd}
+                            onChange={(e) => setBannerEnd(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Text Sizes */}
+                      <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Title Size</label>
+                          <div className="flex gap-2">
+                            {(['small', 'medium', 'large'] as const).map((size) => (
+                              <button
+                                key={size}
+                                onClick={() => setTitleSize(size)}
+                                className={`flex-1 py-1 px-2 rounded border-2 ${
+                                  titleSize === size ? 'border-yellow-600 bg-yellow-50' : 'border-gray-200'
+                                }`}
+                              >
+                                {size}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Subtitle Size</label>
+                          <div className="flex gap-2">
+                            {(['small', 'medium', 'large'] as const).map((size) => (
+                              <button
+                                key={size}
+                                onClick={() => setSubtitleSize(size)}
+                                className={`flex-1 py-1 px-2 rounded border-2 ${
+                                  subtitleSize === size ? 'border-yellow-600 bg-yellow-50' : 'border-gray-200'
+                                }`}
+                              >
+                                {size}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdatePost}
+                  disabled={publishing}
+                  className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-colors ${
+                    publishing
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-yellow-600 text-white hover:bg-yellow-700'
+                  }`}
+                >
+                  {publishing ? 'Updating...' : 'Update Article'}
                 </button>
               </div>
             </div>

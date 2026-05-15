@@ -58,10 +58,8 @@ service cloud.firestore {
                        resource.data.status == 'pending_review' &&
                        request.resource.data.studentName == resource.data.studentName;
       
-      // Only admins can publish posts (change staff_approved to published) with optional banner
-      allow update: if isAdmin() && 
-                       request.resource.data.status == 'published' &&
-                       (resource.data.status == 'staff_approved' || resource.data.status == 'published');
+      // Admins can update and delete any post
+      allow update, delete: if isAdmin();
     }
     
     // Users collection - read only access
